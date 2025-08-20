@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from .api.agent_generator import router as agent_router
+# from .api.agent_generator import router as agent_router
 
 app = FastAPI()
 from fastapi import FastAPI
@@ -27,7 +27,7 @@ app.add_middleware(
 )
 
 # include agent generator router
-app.include_router(agent_router)
+# app.include_router(agent_router)
 
 class SystemData(BaseModel):
     os_version: list

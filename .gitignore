@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+.env
+.venv/
+venv/
+.envrc
+
+# Node/React
+node_modules/
+dist/
+build/
+
+# IDE / Editors
+.vscode/
+.idea/
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
