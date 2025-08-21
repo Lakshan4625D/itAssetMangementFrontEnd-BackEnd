@@ -7,8 +7,10 @@ app = FastAPI()
 from fastapi import FastAPI
 from backend.routes import scans
 from backend.routes import netAssetScanFunc
+from backend.routes import sysAssetScanFunc
 app.include_router(scans.router)
 app.include_router(netAssetScanFunc.router)
+app.include_router(sysAssetScanFunc.router)
 
 
 # Allow React dev server to call this API
