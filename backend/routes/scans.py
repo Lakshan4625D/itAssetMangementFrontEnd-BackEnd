@@ -1,5 +1,6 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import create_engine, text
+import re
 
 router = APIRouter()
 
@@ -80,3 +81,81 @@ def get_devices_table():
         })
 
     return list(subnets.values())
+
+@router.get("/applications/{ip}")
+def get_applications(ip: str):
+    with engine.connect() as conn:
+        system = conn.execute(
+            text("SELECT id, os_type, last_scanned FROM systems WHERE ip = :ip"),
+            {"ip": ip}
+        ).fetchone()
+
+        if not system:
+            raise HTTPException(status_code=404, detail="System not found")
+
+        apps = conn.execute(
+            text("SELECT name, version, publisher FROM applications WHERE system_id = :sid"),
+            {"sid": system.id}
+        ).fetchall()
+
+    return {
+        "ip": ip,
+        "os": system.os_type,
+        "lastUpdated": system.last_scanned.strftime("%Y-%m-%d %H:%M") if system.last_scanned else None,
+        "applications": [
+            {"name": a.name, "version": a.version, "publisher": a.publisher}
+            for a in apps
+        ],
+        "malwareScan": "Clean"
+    }
+
+
+def parse_details(raw_details: str):
+    details = {}
+
+    def extract(pattern):
+        match = re.search(pattern, raw_details)
+        return match.group(1).strip() if match else None
+
+    details["host_name"] = extract(r"Host Name:\s+(.+)")
+    details["os_name"] = extract(r"OS Name:\s+(.+)")
+    details["os_version"] = extract(r"OS Version:\s+(.+)")
+    details["manufacturer"] = extract(r"System Manufacturer:\s+(.+)")
+    details["model"] = extract(r"System Model:\s+(.+)")
+    details["system_type"] = extract(r"System Type:\s+(.+)")
+    details["bios_version"] = extract(r"BIOS Version:\s+(.+)")
+
+    details["total_physical_memory"] = extract(r"Total Physical Memory:\s+(.+)")
+    details["available_physical_memory"] = extract(r"Available Physical Memory:\s+(.+)")
+    details["virtual_memory_max"] = extract(r"Virtual Memory: Max Size:\s+(.+)")
+    details["virtual_memory_available"] = extract(r"Virtual Memory: Available:\s+(.+)")
+
+    details["boot_time"] = extract(r"System Boot Time:\s+(.+)")
+    hotfixes = re.findall(r"\[(\d+)\]: (KB\d+)", raw_details)
+    details["hotfixes"] = [hf[1] for hf in hotfixes]
+
+    details["network_adapter"] = extract(r"Network Card\(s\):.*?\[01\]: (.+)")
+    details["domain"] = extract(r"Domain:\s+(.+)")
+
+    return details
+
+
+@router.get("/system-details/{ip}")
+def get_system_details(ip: str):
+    with engine.connect() as conn:
+        row = conn.execute(
+            text("SELECT os_type, details, last_scanned FROM systems WHERE ip = :ip"),
+            {"ip": ip}
+        ).fetchone()
+
+        if not row:
+            raise HTTPException(status_code=404, detail="System not found")
+
+    parsed = parse_details(row.details)
+
+    return {
+        "ip": ip,
+        "os": row.os_type,
+        "lastUpdated": row.last_scanned.strftime("%Y-%m-%d %H:%M") if row.last_scanned else None,
+        **parsed
+    }

@@ -136,7 +136,7 @@ const ScanHistoryPage = () => {
                     <th className="px-4 py-3">Type</th>
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Last Seen</th>
-                    <th className="px-4 py-3">Action</th>
+                    <th className="px-4 py-3">Details</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -152,7 +152,7 @@ const ScanHistoryPage = () => {
                       <td className="px-4 py-3">{device.lastSeen}</td>
                       <td className="px-4 py-3">
                         <button className="text-blue-600 hover:underline font-medium text-sm">
-                          Check Status
+                          View Details
                         </button>
                       </td>
                     </tr>
