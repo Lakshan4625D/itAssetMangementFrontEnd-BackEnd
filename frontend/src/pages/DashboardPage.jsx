@@ -1,10 +1,62 @@
-import React from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import { FaPlay, FaDownload } from "react-icons/fa";
-import { Search, RefreshCcw } from "lucide-react";
+import { FiSearch } from "react-icons/fi";
+import { RefreshCcw } from "lucide-react";
 import { Monitor, Cloud, AlertTriangle } from "lucide-react";
 
+export default function DashboardPage() {
+  const [summary, setSummary] = useState({
+    total_devices: 0,
+    cloud_assets: 0,
+    vulnerabilities: 0,
+  });
+  const [recentDevices, setRecentDevices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-const DashboardPage = () => {
+  const fetchSummary = async () => {
+    try {
+      const res = await axios.get(`http://localhost:8000/dashboard/summary`);
+      setSummary(res.data);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching summary:", err);
+      setError("Failed to load summary data");
+    }
+  };
+
+  const fetchRecentScan = async () => {
+    try {
+      const res = await axios.get(`http://localhost:8000/dashboard/recent-scan`);
+      setRecentDevices(res.data || []);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching recent scan:", err);
+      setError("Failed to load recent scan data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSummary();
+    fetchRecentScan();
+  }, []);
+
+  // Placeholder Export function (for backend later)
+  const handleExport = () => {
+    alert("Export functionality will be implemented after backend is ready.");
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p className="text-gray-500 text-lg">Loading dashboard...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gray-100 font-sans">
       {/* Main Content Area */}
@@ -12,7 +64,7 @@ const DashboardPage = () => {
         {/* Page Title and Action Buttons */}
         <div className="mb-4">
           <h1 className="text-2xl font-semibold text-gray-900 mb-3">
-            Scan History
+            Dashboard
           </h1>
           <div className="flex gap-3">
             {/* Start New Scan Button */}
@@ -22,30 +74,36 @@ const DashboardPage = () => {
             </button>
 
             {/* Export Button */}
-            <button className="flex items-center gap-2 bg-[#F3F4F6] text-[#374151] border border-[#D1D5DB] px-4 py-2 rounded-md font-medium text-sm">
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 bg-[#F3F4F6] text-[#374151] border border-[#D1D5DB] px-4 py-2 rounded-md font-medium text-sm"
+            >
               <FaDownload className="text-xs" />
               Export
             </button>
           </div>
         </div>
 
+        {/* ERROR DISPLAY */}
+        {error && <p className="text-red-500 mb-4">{error}</p>}
+
         {/* Stats Section */}
         <div className="flex gap-6 mb-5">
           <div className="bg-white border border-gray-200 rounded-lg p-5 text-left w-1/3 shadow-sm">
             <Monitor className="w-6 h-6 text-blue-500 mb-2" />
-            <p className="text-2xl font-bold text-blue-600">12</p>
+            <p className="text-2xl font-bold text-blue-600">{summary.total_devices}</p>
             <p className="text-sm text-gray-600">Total Devices</p>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-lg p-5 text-left w-1/3 shadow-sm">
             <Cloud className="w-6 h-6 text-blue-500 mb-2" />
-            <p className="text-2xl font-bold text-blue-600">5</p>
+            <p className="text-2xl font-bold text-blue-600">{summary.cloud_assets}</p>
             <p className="text-sm text-gray-600">Cloud Assets</p>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-lg p-5 text-left w-1/3 shadow-sm">
             <AlertTriangle className="w-6 h-6 text-red-500 mb-2" />
-            <p className="text-2xl font-bold text-red-600">3</p>
+            <p className="text-2xl font-bold text-red-600">{summary.vulnerabilities}</p>
             <p className="text-sm text-gray-600">Vulnerabilities</p>
           </div>
         </div>
@@ -63,11 +121,18 @@ const DashboardPage = () => {
                 placeholder="Search..."
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             </div>
 
             {/* Reload Button */}
-            <button className="text-gray-600 hover:text-blue-600 focus:outline-none">
+            <button
+              onClick={() => {
+                setLoading(true);
+                fetchSummary();
+                fetchRecentScan();
+              }}
+              className="text-gray-600 hover:text-blue-600 focus:outline-none"
+            >
               <RefreshCcw className="w-5 h-5" />
             </button>
           </div>
@@ -98,38 +163,23 @@ const DashboardPage = () => {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-gray-200">
-                  <td className="p-2 text-gray-800">192.168.1.10</td>
-                  <td className="p-2 text-gray-800">device1</td>
-                  <td className="p-2 text-gray-800">Linux</td>
-                  <td className="p-2 text-gray-800">22</td>
-                  <td className="p-2 text-gray-800">00:1A:2B:3C:4D:5F</td>
-                  <td className="p-2 text-gray-800">Server</td>
-                </tr>
-                <tr className="border-b border-gray-200">
-                  <td className="p-2 text-gray-800">192.168.1.15</td>
-                  <td className="p-2 text-gray-800">device2</td>
-                  <td className="p-2 text-gray-800">Windows</td>
-                  <td className="p-2 text-gray-800">80, 443</td>
-                  <td className="p-2 text-gray-800">00:1A:2B:3C:4D:5F</td>
-                  <td className="p-2 text-gray-800">Workstation</td>
-                </tr>
-                <tr className="border-b border-gray-200">
-                  <td className="p-2 text-gray-800">192.168.1.20</td>
-                  <td className="p-2 text-gray-800">device3</td>
-                  <td className="p-2 text-gray-800">Linux</td>
-                  <td className="p-2 text-gray-800">3389</td>
-                  <td className="p-2 text-gray-800">00:1A:2B:3C:4D:60</td>
-                  <td className="p-2 text-gray-800">Workstation</td>
-                </tr>
-                <tr className="border-b border-gray-200">
-                  <td className="p-2 text-gray-800">192.168.1.25</td>
-                  <td className="p-2 text-gray-800">device4</td>
-                  <td className="p-2 text-gray-800">Linux</td>
-                  <td className="p-2 text-gray-800">-</td>
-                  <td className="p-2 text-gray-800">00:1A:2B:3C:4D:61</td>
-                  <td className="p-2 text-gray-800">Server</td>
-                </tr>
+                {recentDevices.length === 0 && (
+                  <tr>
+                    <td colSpan="6" className="py-4 text-center text-gray-500">
+                      No recent scans found
+                    </td>
+                  </tr>
+                )}
+                {recentDevices.map((d, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50 border-b border-gray-200">
+                    <td className="p-2 text-gray-800">{d.ip}</td>
+                    <td className="p-2 text-gray-800">{d.hostname}</td>
+                    <td className="p-2 text-gray-800">{d.os}</td>
+                    <td className="p-2 text-gray-800">{d.ports || "-"}</td>
+                    <td className="p-2 text-gray-800">{d.mac}</td>
+                    <td className="p-2 text-gray-800">{d.type}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
@@ -137,6 +187,4 @@ const DashboardPage = () => {
       </div>
     </div>
   );
-};
-
-export default DashboardPage;
+}

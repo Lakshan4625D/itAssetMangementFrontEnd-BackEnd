@@ -8,22 +8,21 @@ const ScanHistoryPage = () => {
   const [loadingScan, setLoadingScan] = useState(false);
 
   // Fetch scan history
- const fetchScanHistory = () => {
-  axios.get("http://localhost:8000/scan-history")
-    .then((res) => {
-      // Sort by lastScan (most recent first)
-      const sorted = [...res.data].sort((a, b) => {
-        const dateA = new Date(a.lastScan);
-        const dateB = new Date(b.lastScan);
-        return dateB - dateA; // descending
+  const fetchScanHistory = () => {
+    axios.get("http://localhost:8000/scan-history")
+      .then((res) => {
+        const sorted = [...res.data].sort((a, b) => {
+          const dateA = new Date(a.lastScan);
+          const dateB = new Date(b.lastScan);
+          return dateB - dateA;
+        });
+        setSubnets(sorted);
+        setError(null);
+      })
+      .catch(() => {
+        setError("Failed to load scan history");
       });
-      setSubnets(sorted);
-      setError(null);
-    })
-    .catch(() => {
-      setError("Failed to load scan history");
-    });
-};
+  };
 
   // Poll scan status until finished
   const pollScanStatus = () => {
@@ -34,7 +33,7 @@ const ScanHistoryPage = () => {
           if (status === "finished" || status === "error") {
             clearInterval(interval);
             setLoadingScan(false);
-            fetchScanHistory(); // Refresh after scan finishes
+            fetchScanHistory();
           }
         })
         .catch(() => {
@@ -60,20 +59,6 @@ const ScanHistoryPage = () => {
   useEffect(() => {
     fetchScanHistory();
   }, []);
-
-  const getStatusBadge = (status) => {
-    const baseClasses = "px-2 py-1 text-xs rounded-full font-medium inline-block";
-    switch (status) {
-      case "Active":
-        return <span className={`${baseClasses} bg-green-100 text-green-700`}>Active</span>;
-      case "Inactive":
-        return <span className={`${baseClasses} bg-red-100 text-red-700`}>Inactive</span>;
-      case "Unknown":
-        return <span className={`${baseClasses} bg-yellow-100 text-yellow-700`}>Unknown</span>;
-      default:
-        return null;
-    }
-  };
 
   return (
     <div className="bg-gray-50 min-h-screen p-6 text-gray-800">
@@ -128,33 +113,25 @@ const ScanHistoryPage = () => {
               <table className="w-full text-sm text-left">
                 <thead className="bg-gray-100 text-gray-600 uppercase text-xs">
                   <tr>
-                    <th className="px-4 py-3"></th>
+                    <th className="px-4 py-3">S.No</th>
                     <th className="px-4 py-3">IP Address</th>
                     <th className="px-4 py-3">Hostname</th>
                     <th className="px-4 py-3">OS</th>
                     <th className="px-4 py-3">MAC Address</th>
                     <th className="px-4 py-3">Type</th>
-                    <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Last Seen</th>
-                    <th className="px-4 py-3">Details</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {subnet.devices.map((device, i) => (
                     <tr key={i} className="hover:bg-gray-50">
-                      <td className="px-4 py-3"><input type="checkbox" /></td>
+                      <td className="px-4 py-3">{i + 1}</td>
                       <td className="px-4 py-3">{device.ip}</td>
                       <td className="px-4 py-3">{device.hostname}</td>
                       <td className="px-4 py-3">{device.os}</td>
                       <td className="px-4 py-3">{device.mac}</td>
                       <td className="px-4 py-3">{device.type}</td>
-                      <td className="px-4 py-3">{getStatusBadge(device.status)}</td>
                       <td className="px-4 py-3">{device.lastSeen}</td>
-                      <td className="px-4 py-3">
-                        <button className="text-blue-600 hover:underline font-medium text-sm">
-                          View Details
-                        </button>
-                      </td>
                     </tr>
                   ))}
                 </tbody>

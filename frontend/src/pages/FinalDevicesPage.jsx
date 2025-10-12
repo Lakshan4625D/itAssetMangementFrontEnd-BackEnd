@@ -1,17 +1,8 @@
 import { useState, useEffect } from "react";
 import { FaPlay, FaDownload, FaTh } from "react-icons/fa";
 import { FiSearch } from "react-icons/fi";
-import { RxDotFilled } from "react-icons/rx";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { IoClose } from "react-icons/io5";
 import axios from "axios";
-
-const statusColors = {
-  online: "text-green-500",
-  offline: "text-red-500",
-  warning: "text-yellow-500",
-  Active: "text-green-500", // matches backend
-};
 
 export default function FinalDevicesPage() {
   const [devices, setDevices] = useState([]);
@@ -25,7 +16,6 @@ export default function FinalDevicesPage() {
     try {
       const res = await axios.get("http://localhost:8000/devices-table");
 
-      // Flatten devices while keeping subnet + lastScan info
       const flatDevices = res.data.flatMap((subnetGroup) =>
         subnetGroup.devices.map((device) => ({
           ...device,
@@ -34,12 +24,10 @@ export default function FinalDevicesPage() {
         }))
       );
 
-      // Deduplicate by IP
       const uniqueDevices = Array.from(
         new Map(flatDevices.map((d) => [d.ip, d])).values()
       );
 
-      // Sort by subnet first, then IP
       uniqueDevices.sort((a, b) => {
         if (a.subnet < b.subnet) return -1;
         if (a.subnet > b.subnet) return 1;
@@ -76,6 +64,26 @@ export default function FinalDevicesPage() {
     }
   };
 
+  // 🔽 Export function
+  const handleExport = async () => {
+    try {
+      const response = await axios.get("http://localhost:8000/export/scans-devices", {
+        responseType: "blob", // important for downloading files
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "devices_export.csv"); // filename
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("Export failed:", err);
+      alert("Failed to export devices");
+    }
+  };
+
   return (
     <div className="bg-[#F7F8FA] min-h-screen p-6 font-inter text-[#1F2937]">
       <div className="bg-white rounded-xl p-6">
@@ -88,7 +96,10 @@ export default function FinalDevicesPage() {
                 <FaPlay className="text-xs" />
                 Start New Scan
               </button>
-              <button className="flex items-center gap-2 bg-[#F3F4F6] text-[#374151] border border-[#D1D5DB] px-4 py-2 rounded-md font-medium text-sm">
+              <button
+                onClick={handleExport}
+                className="flex items-center gap-2 bg-[#F3F4F6] text-[#374151] border border-[#D1D5DB] px-4 py-2 rounded-md font-medium text-sm"
+              >
                 <FaDownload className="text-xs" />
                 Export
               </button>
@@ -119,13 +130,12 @@ export default function FinalDevicesPage() {
           <table className="w-full text-sm">
             <thead className="text-left text-[#6B7280]">
               <tr className="border-b border-gray-200">
-                <th className="py-3 pr-6"></th>
+                <th className="py-3 pr-6">S.No</th>
                 <th className="py-3 pr-6">IP Address</th>
                 <th className="py-3 pr-6">Hostname</th>
                 <th className="py-3 pr-6">MAC Address</th>
                 <th className="py-3 pr-6">Device Type</th>
                 <th className="py-3 pr-6">OS</th>
-                <th className="py-3 pr-6">Status</th>
                 <th className="py-3 pr-6">Last Seen</th>
                 <th className="py-3 pr-6">Subnet</th>
                 <th className="py-3 pr-2"></th>
@@ -137,22 +147,12 @@ export default function FinalDevicesPage() {
                   key={idx}
                   className="hover:bg-gray-50 border-b border-gray-100"
                 >
-                  <td className="py-4 pr-6">
-                    <input type="checkbox" />
-                  </td>
+                  <td className="py-4 pr-6">{indexOfFirst + idx + 1}</td>
                   <td className="py-4 pr-6">{device.ip}</td>
                   <td className="py-4 pr-6">{device.hostname}</td>
                   <td className="py-4 pr-6">{device.mac}</td>
                   <td className="py-4 pr-6">{device.type}</td>
                   <td className="py-4 pr-6">{device.os}</td>
-                  <td className="py-4 pr-6 flex items-center gap-1">
-                    <RxDotFilled
-                      className={`text-lg ${
-                        statusColors[device.status] || "text-gray-400"
-                      }`}
-                    />
-                    {device.status}
-                  </td>
                   <td className="py-4 pr-6">{device.lastSeen}</td>
                   <td className="py-4 pr-6">{device.subnet}</td>
                   <td className="py-4 pr-2">

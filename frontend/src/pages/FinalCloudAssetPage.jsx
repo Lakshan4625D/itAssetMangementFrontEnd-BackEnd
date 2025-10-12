@@ -1,41 +1,100 @@
-import { useState } from 'react';
-import {
-  ListIcon,
-  GridIcon,
-  CheckCircle2Icon,
-  XCircleIcon
-} from 'lucide-react';
-import { FaPlay, FaDownload } from 'react-icons/fa';
+import { useState, useEffect } from "react";
+import { ListIcon, GridIcon } from "lucide-react";
+import { FaPlay, FaDownload } from "react-icons/fa";
 
-// Import cloud provider logos
-import awsLogo from '../assets/aws-logo.svg';
-import azureLogo from '../assets/azure-logo.svg';
-import gcpLogo from '../assets/gcp-logo.svg';
+import awsLogo from "../assets/aws-logo.svg";
+import azureLogo from "../assets/azure-logo.svg";
+import gcpLogo from "../assets/gcp-logo.svg";
 
-const tabs = ['EC2 / VMs', 'Storage', 'IAM Users'];
+const tabs = ["EC2 / VMs", "Storage", "IAM Users"];
+const providers = [
+  { key: "aws", label: "AWS", logo: awsLogo },
+  { key: "azure", label: "Azure", logo: azureLogo },
+  { key: "gcp", label: "GCP", logo: gcpLogo },
+];
+
+// Map tab → backend keys
+const resourceTypeMap = {
+  aws: {
+    "EC2 / VMs": ["aws_ec2"],
+    Storage: ["aws_s3", "aws_ecs"],
+    "IAM Users": ["aws_iam_users"],
+  },
+  azure: {
+    "EC2 / VMs": ["azure_vms"],
+    Storage: ["azure_storage_accounts"],
+    "IAM Users": ["azure_iam_users"],
+  },
+  gcp: {
+    "EC2 / VMs": ["gcp_vms", "gcp_gke_clusters"],
+    Storage: ["gcp_buckets"],
+    "IAM Users": ["gcp_iam_users"],
+  },
+};
 
 export default function FinalCloudAssetPage() {
-  const [activeTab, setActiveTab] = useState('EC2 / VMs');
+  const [activeTab, setActiveTab] = useState("EC2 / VMs");
+  const [activeProvider, setActiveProvider] = useState("aws");
   const [currentPage, setCurrentPage] = useState(1);
+  const [summary, setSummary] = useState({ aws: 0, azure: 0, gcp: 0 });
+  const [tableData, setTableData] = useState({});
+  const [loading, setLoading] = useState(false);
   const itemsPerPage = 5;
 
-  const tableData = [...Array(22)].map((_, idx) => ({
-    instance: `EC2-${1000 + idx}`,
-    ip: `192.168.0.${10 + idx}`,
-    status: true,
-    encrypted: idx % 2 === 0,
-    owner: 'admin@cloud'
-  }));
+  // Fetch summary counts once
+  useEffect(() => {
+    fetch("http://localhost:8000/cloud-assets/summary")
+      .then((res) => res.json())
+      .then((data) =>
+        setSummary({
+          aws: data.aws || 0,
+          azure: data.azure || 0,
+          gcp: data.gcp || 0,
+        })
+      )
+      .catch((err) => console.error("Error fetching cloud summary:", err));
+  }, []);
 
-  const totalPages = Math.ceil(tableData.length / itemsPerPage);
+  // Fetch provider details from new backend
+  useEffect(() => {
+    const loadAssets = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `http://localhost:8000/cloud/${activeProvider}/latest`
+        );
+        const data = await res.json();
+        setTableData(data);
+        setCurrentPage(1);
+      } catch (err) {
+        console.error("Error fetching cloud assets:", err);
+        setTableData({});
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadAssets();
+  }, [activeProvider]);
+
+  // Flatten data for the current tab
+  const selectedKeys = resourceTypeMap[activeProvider][activeTab] || [];
+  const filteredData = selectedKeys.flatMap((key) => tableData[key] || []);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = tableData.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+  // Column headers
+  const headers =
+    currentItems.length > 0 ? Object.keys(currentItems[0]) : ["No data"];
 
   return (
     <div className="p-6 bg-[#F8FAFC] min-h-screen overflow-auto">
-      {/* Top Section */}
-      <h1 className="text-2xl font-semibold text-gray-800 mb-4">Dashboard</h1>
+      <h1 className="text-2xl font-semibold text-gray-800 mb-4">
+        Cloud Assets Dashboard
+      </h1>
 
       {/* Start New Scan + Export */}
       <div className="flex justify-between items-center mb-6">
@@ -55,34 +114,31 @@ export default function FinalCloudAssetPage() {
         </div>
       </div>
 
-      {/* Cloud Provider Cards */}
-      <div className="grid grid-cols-3 gap-6 mb-8">
-        {/* AWS */}
-        <div className="bg-white rounded-lg p-4 flex items-center gap-4 shadow-sm">
-          <img src={awsLogo} alt="AWS Logo" className="w-10 h-10 object-contain" />
-          <div>
-            <p className="text-sm text-gray-500">AWS</p>
-            <p className="text-lg font-semibold text-gray-800">19 Resources</p>
-          </div>
-        </div>
-
-        {/* Azure */}
-        <div className="bg-white rounded-lg p-4 flex items-center gap-4 shadow-sm">
-          <img src={azureLogo} alt="Azure Logo" className="w-10 h-10 object-contain" />
-          <div>
-            <p className="text-sm text-gray-500">Azure</p>
-            <p className="text-lg font-semibold text-gray-800">15 Resources</p>
-          </div>
-        </div>
-
-        {/* GCP */}
-        <div className="bg-white rounded-lg p-4 flex items-center gap-4 shadow-sm">
-          <img src={gcpLogo} alt="GCP Logo" className="w-10 h-10 object-contain" />
-          <div>
-            <p className="text-sm text-gray-500">GCP</p>
-            <p className="text-lg font-semibold text-gray-800">22 Resources</p>
-          </div>
-        </div>
+      {/* Provider Switch */}
+      <div className="flex gap-6 mb-8">
+        {providers.map((p) => (
+          <button
+            key={p.key}
+            onClick={() => setActiveProvider(p.key)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-sm border transition ${
+              activeProvider === p.key
+                ? "bg-blue-50 border-blue-500"
+                : "bg-white border-gray-200 hover:bg-gray-50"
+            }`}
+          >
+            <img
+              src={p.logo}
+              alt={`${p.label} Logo`}
+              className="w-8 h-8 object-contain"
+            />
+            <div className="text-left">
+              <p className="text-sm text-gray-500">{p.label}</p>
+              <p className="text-lg font-semibold text-gray-800">
+                {summary[p.key]} Resources
+              </p>
+            </div>
+          </button>
+        ))}
       </div>
 
       {/* Tabs */}
@@ -93,8 +149,8 @@ export default function FinalCloudAssetPage() {
             onClick={() => setActiveTab(tab)}
             className={`pb-2 px-3 text-sm font-medium ${
               activeTab === tab
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-500 hover:text-gray-700'
+                ? "text-blue-600 border-b-2 border-blue-600"
+                : "text-gray-500 hover:text-gray-700"
             }`}
           >
             {tab}
@@ -104,83 +160,83 @@ export default function FinalCloudAssetPage() {
 
       {/* Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full text-sm text-left text-gray-700">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="px-6 py-3 font-medium">Instance</th>
-              <th className="px-6 py-3 font-medium">IP Address</th>
-              <th className="px-6 py-3 font-medium">Status</th>
-              <th className="px-6 py-3 font-medium">Encrypted</th>
-              <th className="px-6 py-3 font-medium">Owner</th>
-              <th className="px-6 py-3 font-medium text-right">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {currentItems.map((item, idx) => (
-              <tr key={idx} className="hover:bg-gray-50">
-                <td className="px-6 py-4">{item.instance}</td>
-                <td className="px-6 py-4">{item.ip}</td>
-                <td className="px-6 py-4">
-                  <span className="flex items-center gap-1 text-green-600">
-                    <CheckCircle2Icon className="w-4 h-4" />
-                    Yes
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  {item.encrypted ? (
-                    <span className="flex items-center gap-1 text-green-600">
-                      <CheckCircle2Icon className="w-4 h-4" />
-                      Yes
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-red-600">
-                      <XCircleIcon className="w-4 h-4" />
-                      No
-                    </span>
-                  )}
-                </td>
-                <td className="px-6 py-4">{item.owner}</td>
-                <td className="px-6 py-4 text-right">
-                  <button className="text-blue-600 hover:underline">Details</button>
-                </td>
+        {loading ? (
+          <div className="p-6 text-center text-blue-600 font-medium">
+            Loading {activeProvider.toUpperCase()} {activeTab}...
+          </div>
+        ) : (
+          <table className="min-w-full text-sm text-left text-gray-700">
+            <thead className="bg-gray-50 border-b">
+              <tr>
+                {headers.map((h, idx) => (
+                  <th key={idx} className="px-6 py-3">
+                    {h}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {currentItems.map((row, idx) => (
+                <tr key={idx} className="hover:bg-gray-50">
+                  {headers.map((col, cidx) => (
+                    <td key={cidx} className="px-6 py-4">
+                      {row[col] ?? "-"}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              {currentItems.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={headers.length}
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
+                    No data available for {activeProvider.toUpperCase()}{" "}
+                    {activeTab}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        )}
 
         {/* Pagination */}
-        <div className="flex justify-between items-center p-4 border-t text-sm text-gray-600">
-          <span>
-            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, tableData.length)} of {tableData.length} entries
-          </span>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage((prev) => prev - 1)}
-              disabled={currentPage === 1}
-              className={`px-3 py-1 rounded-md ${
-                currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Previous
-            </button>
-            <span className="px-3 py-1 rounded-md bg-[#2563EB] text-white font-medium">
-              {currentPage}
+        {!loading && filteredData.length > 0 && (
+          <div className="flex justify-between items-center p-4 border-t text-sm text-gray-600">
+            <span>
+              Showing {indexOfFirstItem + 1} to{" "}
+              {Math.min(indexOfLastItem, filteredData.length)} of{" "}
+              {filteredData.length} entries
             </span>
-            <button
-              onClick={() => setCurrentPage((prev) => prev + 1)}
-              disabled={currentPage === totalPages}
-              className={`px-3 py-1 rounded-md ${
-                currentPage === totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Next
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded-md ${
+                  currentPage === 1
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                Previous
+              </button>
+              <span className="px-3 py-1 rounded-md bg-[#2563EB] text-white font-medium">
+                {currentPage}
+              </span>
+              <button
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                disabled={currentPage === totalPages || totalPages === 0}
+                className={`px-3 py-1 rounded-md ${
+                  currentPage === totalPages || totalPages === 0
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                Next
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

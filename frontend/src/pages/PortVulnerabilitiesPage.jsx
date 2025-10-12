@@ -1,27 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiSearch } from "react-icons/fi";
 import { FaShieldAlt, FaDownload, FaTh } from "react-icons/fa";
 
-// Keep the exact remembered severity colors
+// Severity colors
 const severityStyles = {
-  Critical: "bg-[#FEE2E2] text-[#DC2626]",
-  High: "bg-[#FEE2E2] text-[#DC2626]",
-  Medium: "bg-[#FFEDD5] text-[#FACC15]",
+  critical: "bg-[#FEE2E2] text-[#DC2626]",
+  high: "bg-[#FEE2E2] text-[#DC2626]",
+  medium: "bg-[#FFEDD5] text-[#FACC15]",
+  low: "bg-[#E0F2FE] text-[#0284C7]",
 };
 
-const vulnerabilities = [
-  { ip: "192.168.1.1", hostname: "Server01", port: "80", protocol: "TCP", cve: "CVE-2018-5173", description: "OpenSSL User Enumeration", severity: "Critical" },
-  { ip: "192.168.1.2", hostname: "WebApp07", port: "443", protocol: "TCP", cve: "CVE-2016-1231", description: "HTTP Privilege Esc", severity: "High" },
-  { ip: "192.168.1.3", hostname: "DBServer", port: "3306", protocol: "TCP", cve: "CVE-2020-9871", description: "Buffer Overflow", severity: "High" },
-  { ip: "192.168.1.4", hostname: "AppServer", port: "1433", protocol: "TCP", cve: "CVE-2019-1214", description: "Remote Code Execution", severity: "High" },
-  { ip: "192.168.1.5", hostname: "MailServer", port: "25", protocol: "TCP", cve: "CVE-2022-1348", description: "Hazard Injection", severity: "Medium" },
-  { ip: "192.168.1.6", hostname: "FileServer", port: "21", protocol: "TCP", cve: "CVE-2017-4567", description: "FTP Overflow", severity: "Medium" },
-  { ip: "192.168.1.7", hostname: "Gateway", port: "8080", protocol: "TCP", cve: "CVE-2021-3344", description: "Proxy Bypass", severity: "Critical" },
-];
-
 export default function PortVulnerabilitiesPage() {
+  const [vulnerabilities, setVulnerabilities] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  useEffect(() => {
+    fetch("http://localhost:8000/vulnerabilities/all")
+      .then((res) => res.json())
+      .then((data) => {
+        setVulnerabilities(data.vulnerabilities || []);
+      })
+      .catch((err) => console.error("Error fetching vulnerabilities:", err));
+  }, []);
 
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
@@ -80,7 +81,6 @@ export default function PortVulnerabilitiesPage() {
                 <th className="text-left py-3 pr-6">Device IP</th>
                 <th className="text-left py-3 pr-6">Hostname</th>
                 <th className="text-left py-3 pr-6">Port</th>
-                <th className="text-left py-3 pr-6">Protocol</th>
                 <th className="text-left py-3 pr-6">Vulnerability ID</th>
                 <th className="text-left py-3 pr-6">Description</th>
                 <th className="text-left py-3 pr-6">Severity</th>
@@ -88,30 +88,42 @@ export default function PortVulnerabilitiesPage() {
               </tr>
             </thead>
             <tbody>
-            {currentItems.map((vuln, idx) => (
-              <tr key={idx} className="hover:bg-gray-50 border-b border-gray-100">
-                <td className="py-4 pr-6">{vuln.ip}</td>
-                <td className="py-4 pr-6">{vuln.hostname}</td>
-                <td className="py-4 pr-6">{vuln.port}</td>
-                <td className="py-4 pr-6">{vuln.protocol}</td>
-                <td className="py-4 pr-6">{vuln.cve}</td>
-                <td className="py-4 pr-6">{vuln.description}</td>
-                <td className="py-4 pr-6">
-                  <span
-                    className={`text-xs font-medium px-2 py-1 rounded-full ${severityStyles[vuln.severity]}`}
-                  >
-                    {vuln.severity}
-                  </span>
-                </td>
-                <td className="py-4 pr-3">
-                  <button className="text-[#2563EB] font-medium text-sm hover:underline">
-                    Details
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-
+              {currentItems.length > 0 ? (
+                currentItems.map((vuln, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50 border-b border-gray-100">
+                    <td className="py-4 pr-6">{vuln.device_ip}</td>
+                    <td className="py-4 pr-6">{vuln.device_hostname}</td>
+                    <td className="py-4 pr-6">{vuln.port}</td>
+                    <td className="py-4 pr-6 max-w-[160px] truncate" title={vuln.vulnerability_id}>
+                      {vuln.vulnerability_id}
+                    </td>
+                    <td className="py-4 pr-6 max-w-[220px] truncate" title={vuln.vulnerability_description}>
+                      {vuln.vulnerability_description}
+                    </td>
+                    <td className="py-4 pr-6">
+                      <span
+                        className={`text-xs font-medium px-2 py-1 rounded-full ${
+                          severityStyles[vuln.severity?.toLowerCase()] || "bg-gray-200 text-gray-700"
+                        }`}
+                      >
+                        {vuln.severity}
+                      </span>
+                    </td>
+                    <td className="py-4 pr-3">
+                      <button className="text-[#2563EB] font-medium text-sm hover:underline">
+                        Details
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className="text-center py-6 text-gray-500">
+                    No vulnerabilities found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
           </table>
         </div>
 

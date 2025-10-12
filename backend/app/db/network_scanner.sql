@@ -65,6 +65,18 @@ CREATE TABLE IF NOT EXISTS `applications` (
   CONSTRAINT `applications_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=216 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+CREATE TABLE `malware_detections` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `system_id` int DEFAULT NULL,
+  `application_name` text,
+  `file_path` text,
+  `signature` text,
+  `scan_time` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `system_id` (`system_id`),
+  CONSTRAINT `malware_detections_ibfk_1` FOREIGN KEY (`system_id`) REFERENCES `systems` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 -- 6. Cloud scan history (parent of all cloud-specific tables)
 CREATE TABLE IF NOT EXISTS `cloud_scan_history` (
   `id` INT NOT NULL AUTO_INCREMENT,
@@ -202,3 +214,12 @@ CREATE TABLE IF NOT EXISTS `gcp_iam_users` (
   KEY `scan_id` (`scan_id`),
   CONSTRAINT `fk_gcp_iam_scan` FOREIGN KEY (`scan_id`) REFERENCES `cloud_scan_history` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- 7. Agents table
+CREATE TABLE agents (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nickname VARCHAR(255) NOT NULL,
+    os ENUM('windows', 'linux', 'darwin') NOT NULL,
+    static_token VARCHAR(128) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

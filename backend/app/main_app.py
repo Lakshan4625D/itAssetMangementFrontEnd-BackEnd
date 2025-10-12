@@ -4,16 +4,23 @@ from fastapi.middleware.cors import CORSMiddleware
 # from .api.agent_generator import router as agent_router
 
 app = FastAPI()
-from fastapi import FastAPI
 from backend.routes import scans
+from backend.routes import delete
+from backend.routes import dashboard
 from backend.routes import netAssetScanFunc
 from backend.routes import sysAssetScanFunc
 from backend.routes import export
-app.include_router(scans.router)
-app.include_router(netAssetScanFunc.router)
-app.include_router(sysAssetScanFunc.router)
-app.include_router(export.router)
+from backend.routes import agent
+from backend.routes import cloud_asset
 
+app.include_router(sysAssetScanFunc.router)
+app.include_router(scans.router)
+app.include_router(delete.router)
+app.include_router(dashboard.router)
+app.include_router(netAssetScanFunc.router)
+app.include_router(export.router)
+app.include_router(agent.router)
+app.include_router(cloud_asset.router)
 
 # Allow React dev server to call this API
 origins = [

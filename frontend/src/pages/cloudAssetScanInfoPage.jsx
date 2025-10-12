@@ -1,233 +1,319 @@
-import React, { useState } from "react";
-import { FaServer, FaCloud, FaNetworkWired, FaUser, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import React, { useState, useEffect } from "react";
+import {
+  FaServer,
+  FaCloud,
+  FaNetworkWired,
+  FaUser,
+  FaChevronDown,
+  FaChevronUp,
+} from "react-icons/fa";
+import { useParams } from "react-router-dom";
 
-const cloudAssetScanInfoPage = () => {
+const CloudAssetScanInfoPage = () => {
+  const { scan_id } = useParams();
+  const [scanData, setScanData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [vmOpen, setVmOpen] = useState(true);
   const [bucketOpen, setBucketOpen] = useState(false);
   const [clusterOpen, setClusterOpen] = useState(false);
   const [iamOpen, setIamOpen] = useState(false);
 
+  useEffect(() => {
+    const fetchScanData = async () => {
+      try {
+        const res = await fetch(`http://localhost:8000/cloud-scans/${scan_id}`);
+        if (!res.ok) throw new Error("Failed to fetch scan data");
+        const data = await res.json();
+        setScanData(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchScanData();
+  }, [scan_id]);
+
+  if (loading) return <div className="p-6">Loading scan details...</div>;
+  if (error) return <div className="p-6 text-red-600">Error: {error}</div>;
+  if (!scanData) return <div className="p-6">No scan data found.</div>;
+
+  const { scan, summary, vms, buckets, clusters, iam_users } = scanData;
+
+  /** ----------- PROVIDER-BASED FIELD MAPPING ----------- **/
+
+  // VM columns
+  const vmColumns =
+    scan.provider === "AWS"
+      ? ["Instance ID", "Type", "State", "Public IP", "Region"]
+      : scan.provider === "GCP"
+      ? ["Name", "Zone", "Status", "Machine Type"]
+      : ["VM Name", "Location", "VM Type", "VM Size"]; // Azure
+
+  // Bucket columns
+  const bucketColumns =
+    scan.provider === "AWS"
+      ? ["Bucket Name", "Creation Date"]
+      : scan.provider === "GCP"
+      ? ["Bucket Name", "Location", "Storage Class"]
+      : ["Name", "Location", "Kind", "SKU"]; // ✅ Azure real fields
+
+  // Cluster columns
+  const clusterColumns =
+    scan.provider === "AWS"
+      ? ["Cluster Name", "Status", "Active Services", "Running Tasks", "Region"]
+      : scan.provider === "GCP"
+      ? ["Cluster Name", "Location", "Status", "Endpoint"]
+      : ["Name", "Location", "Version", "DNS Prefix"]; // ✅ Azure real fields
+
+  // IAM user columns
+  const iamColumns = ["Username", "Role", "Created"];
+
+  /** ----------- FIELD EXTRACTORS PER PROVIDER ----------- **/
+
+  const renderVmRow = (vm, idx) => {
+    if (scan.provider === "AWS") {
+      return (
+        <tr key={idx} className="hover:bg-gray-50">
+          <td className="px-4 py-2">{vm.instance_id}</td>
+          <td className="px-4 py-2">{vm.type}</td>
+          <td className="px-4 py-2">{vm.state}</td>
+          <td className="px-4 py-2">{vm.public_ip}</td>
+          <td className="px-4 py-2">{vm.region}</td>
+        </tr>
+      );
+    }
+    if (scan.provider === "GCP") {
+      return (
+        <tr key={idx} className="hover:bg-gray-50">
+          <td className="px-4 py-2">{vm.name}</td>
+          <td className="px-4 py-2">{vm.zone}</td>
+          <td className="px-4 py-2">{vm.status}</td>
+          <td className="px-4 py-2">{vm.machine_type}</td>
+        </tr>
+      );
+    }
+    // Azure
+    return (
+      <tr key={idx} className="hover:bg-gray-50">
+        <td className="px-4 py-2">{vm.name}</td>
+        <td className="px-4 py-2">{vm.location}</td>
+        <td className="px-4 py-2">{vm.vm_type}</td>
+        <td className="px-4 py-2">{vm.vm_size}</td>
+      </tr>
+    );
+  };
+
+  const renderBucketRow = (bucket, idx) => {
+    if (scan.provider === "AWS") {
+      return (
+        <tr key={idx} className="hover:bg-gray-50">
+          <td className="px-4 py-2">{bucket.name}</td>
+          <td className="px-4 py-2">{bucket.creation_date}</td>
+        </tr>
+      );
+    }
+    if (scan.provider === "GCP") {
+      return (
+        <tr key={idx} className="hover:bg-gray-50">
+          <td className="px-4 py-2">{bucket.name}</td>
+          <td className="px-4 py-2">{bucket.location}</td>
+          <td className="px-4 py-2">{bucket.storage_class}</td>
+        </tr>
+      );
+    }
+    // ✅ Azure
+    return (
+      <tr key={idx} className="hover:bg-gray-50">
+        <td className="px-4 py-2">{bucket.name}</td>
+        <td className="px-4 py-2">{bucket.location}</td>
+        <td className="px-4 py-2">{bucket.kind}</td>
+        <td className="px-4 py-2">{bucket.sku}</td>
+      </tr>
+    );
+  };
+
+  const renderClusterRow = (cl, idx) => {
+    if (scan.provider === "AWS") {
+      return (
+        <tr key={idx} className="hover:bg-gray-50">
+          <td className="px-4 py-2">{cl.name}</td>
+          <td className="px-4 py-2">{cl.status}</td>
+          <td className="px-4 py-2">{cl.active_services}</td>
+          <td className="px-4 py-2">{cl.running_tasks}</td>
+          <td className="px-4 py-2">{cl.region}</td>
+        </tr>
+      );
+    }
+    if (scan.provider === "GCP") {
+      return (
+        <tr key={idx} className="hover:bg-gray-50">
+          <td className="px-4 py-2">{cl.name}</td>
+          <td className="px-4 py-2">{cl.location}</td>
+          <td className="px-4 py-2">{cl.status}</td>
+          <td className="px-4 py-2">{cl.endpoint}</td>
+        </tr>
+      );
+    }
+    // ✅ Azure
+    return (
+      <tr key={idx} className="hover:bg-gray-50">
+        <td className="px-4 py-2">{cl.name}</td>
+        <td className="px-4 py-2">{cl.location}</td>
+        <td className="px-4 py-2">{cl.version}</td>
+        <td className="px-4 py-2">{cl.dns_prefix}</td>
+      </tr>
+    );
+  };
+
+  const renderIamRow = (user, idx) => (
+    <tr key={idx} className="hover:bg-gray-50">
+      <td className="px-4 py-2">{user.username}</td>
+      <td className="px-4 py-2">{user.role}</td>
+      <td className="px-4 py-2">{user.created}</td>
+    </tr>
+  );
+
+  /** ----------- UI RENDER ----------- **/
   return (
     <div className="p-6 mb-8 text-sm font-inter bg-gray-50 min-h-screen">
       <div className="bg-white rounded-xl shadow-sm p-6 space-y-6">
-        {/* Page Title */}
-        <h1 className="text-xl font-semibold text-gray-800">Cloud Scan History / Scan Information</h1>
+        {/* Title */}
+        <h1 className="text-xl font-semibold text-gray-800">
+          Cloud Scan History / Scan Information
+        </h1>
 
         {/* Scan Summary */}
         <div className="grid grid-cols-2 gap-6">
-          {/* Left Column */}
-          <div className="space-y-2">
-            <div>
-              <p className="text-sm font-semibold text-gray-700">Provider:</p>
-              <p className="text-sm text-gray-500">Amazon Web Services</p>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-700">Status:</p>
-              <span className="bg-green-100 text-green-700 px-2 py-1 text-xs rounded-full">
-                Completed
-              </span>
-            </div>
+          <div>
+            <p className="font-semibold">Provider:</p>
+            <p>{scan.provider}</p>
           </div>
-
-          {/* Right Column */}
-          <div className="space-y-2">
-            <div>
-              <p className="text-sm font-semibold text-gray-700">Scan Date & Time:</p>
-              <p className="text-sm text-gray-500">June 15, 2023, 14:30 UTC</p>
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-700">Duration:</p>
-              <p className="text-sm text-gray-500">5m 32s</p>
-            </div>
+          <div>
+            <p className="font-semibold">Status:</p>
+            <span
+              className={`px-2 py-1 text-xs rounded-full ${
+                scan.status === "Completed"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-yellow-100 text-yellow-700"
+              }`}
+            >
+              {scan.status}
+            </span>
+          </div>
+          <div>
+            <p className="font-semibold">Scan Time:</p>
+            <p>{scan.scan_time}</p>
           </div>
         </div>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-gray-50 rounded-lg p-4 hover:shadow transition">
+          <div className="bg-gray-50 rounded-lg p-4">
             <FaServer className="text-xl text-blue-600 mb-2" />
-            <div className="text-2xl font-bold">156 VMs</div>
-            <div className="text-sm text-gray-500">Virtual Machines</div>
+            <div className="text-2xl font-bold">{summary.total_vms}</div>
+            <div>Virtual Machines</div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-4 hover:shadow transition">
+          <div className="bg-gray-50 rounded-lg p-4">
             <FaCloud className="text-xl text-blue-600 mb-2" />
-            <div className="text-2xl font-bold">43 Buckets</div>
-            <div className="text-sm text-gray-500">Storage Buckets</div>
+            <div className="text-2xl font-bold">{summary.total_buckets}</div>
+            <div>Storage Buckets</div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-4 hover:shadow transition">
+          <div className="bg-gray-50 rounded-lg p-4">
             <FaNetworkWired className="text-xl text-blue-600 mb-2" />
-            <div className="text-2xl font-bold">12 Clusters</div>
-            <div className="text-sm text-gray-500">Kubernetes Clusters</div>
+            <div className="text-2xl font-bold">{summary.total_clusters}</div>
+            <div>Kubernetes Clusters</div>
           </div>
-          <div className="bg-gray-50 rounded-lg p-4 hover:shadow transition">
+          <div className="bg-gray-50 rounded-lg p-4">
             <FaUser className="text-xl text-blue-600 mb-2" />
-            <div className="text-2xl font-bold">89 IAM Users</div>
-            <div className="text-sm text-gray-500">Identity Access</div>
+            <div className="text-2xl font-bold">{summary.total_iam_users}</div>
+            <div>IAM Users</div>
           </div>
         </div>
 
-        {/* VMs Section */}
-        <div className="border rounded-lg overflow-hidden">
-          <div
-            onClick={() => setVmOpen(!vmOpen)}
-            className="bg-gray-100 px-4 py-2 flex justify-between items-center cursor-pointer"
-          >
-            <span className="font-semibold text-gray-700">Virtual Machines (156)</span>
-            {vmOpen ? <FaChevronUp /> : <FaChevronDown />}
-          </div>
-          {vmOpen && (
-            <div className="overflow-x-auto transition-all duration-300 ease-in-out">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-100 text-xs font-semibold uppercase text-gray-500">
-                  <tr>
-                    <th className="px-4 py-2 text-left">Instance ID</th>
-                    <th className="px-4 py-2 text-left">Name</th>
-                    <th className="px-4 py-2 text-left">Type</th>
-                    <th className="px-4 py-2 text-left">Region</th>
-                    <th className="px-4 py-2 text-left">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="hover:bg-gray-50">
-                    <td className="px-4 py-2">i-abc123</td>
-                    <td className="px-4 py-2">vm-app-1</td>
-                    <td className="px-4 py-2">t2.medium</td>
-                    <td className="px-4 py-2">us-west-1</td>
-                    <td className="px-4 py-2">
-                      <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">Running</span>
-                    </td>
-                  </tr>
-                  <tr className="hover:bg-gray-50">
-                    <td className="px-4 py-2">i-def456</td>
-                    <td className="px-4 py-2">vm-db-1</td>
-                    <td className="px-4 py-2">t3.large</td>
-                    <td className="px-4 py-2">us-east-1</td>
-                    <td className="px-4 py-2">
-                      <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs">Stopped</span>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        {/* VMs */}
+        <Section
+          title={`Virtual Machines (${vms.length})`}
+          isOpen={vmOpen}
+          toggle={() => setVmOpen(!vmOpen)}
+          columns={vmColumns}
+          rows={vms}
+          renderRow={renderVmRow}
+        />
 
-        {/* Buckets Section */}
-        <div className="border rounded-lg overflow-hidden">
-          <div
-            onClick={() => setBucketOpen(!bucketOpen)}
-            className="bg-gray-100 px-4 py-2 flex justify-between items-center cursor-pointer"
-          >
-            <span className="font-semibold text-gray-700">Storage Buckets (43)</span>
-            {bucketOpen ? <FaChevronUp /> : <FaChevronDown />}
-          </div>
-          {bucketOpen && (
-            <div className="overflow-x-auto transition-all duration-300 ease-in-out">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-100 text-xs font-semibold uppercase text-gray-500">
-                  <tr>
-                    <th className="px-4 py-2 text-left">Bucket Name</th>
-                    <th className="px-4 py-2 text-left">Region</th>
-                    <th className="px-4 py-2 text-left">Storage Class</th>
-                    <th className="px-4 py-2 text-left">Size</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="hover:bg-gray-50">
-                    <td className="px-4 py-2">production-backups</td>
-                    <td className="px-4 py-2">us-west-1</td>
-                    <td className="px-4 py-2">Standard</td>
-                    <td className="px-4 py-2">3.1 TB</td>
-                  </tr>
-                  <tr className="hover:bg-gray-50">
-                    <td className="px-4 py-2">analytics-logs</td>
-                    <td className="px-4 py-2">eu-west-1</td>
-                    <td className="px-4 py-2">Glacier</td>
-                    <td className="px-4 py-2">800 GB</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        {/* Buckets */}
+        <Section
+          title={`Storage Buckets (${buckets.length})`}
+          isOpen={bucketOpen}
+          toggle={() => setBucketOpen(!bucketOpen)}
+          columns={bucketColumns}
+          rows={buckets}
+          renderRow={renderBucketRow}
+        />
 
-        {/* Clusters Section */}
-        <div className="border rounded-lg overflow-hidden">
-          <div
-            onClick={() => setClusterOpen(!clusterOpen)}
-            className="bg-gray-100 px-4 py-2 flex justify-between items-center cursor-pointer"
-          >
-            <span className="font-semibold text-gray-700">Clusters (12)</span>
-            {clusterOpen ? <FaChevronUp /> : <FaChevronDown />}
-          </div>
-          {clusterOpen && (
-            <div className="overflow-x-auto transition-all duration-300 ease-in-out">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-100 text-xs font-semibold uppercase text-gray-500">
-                  <tr>
-                    <th className="px-4 py-2 text-left">Cluster Name</th>
-                    <th className="px-4 py-2 text-left">Nodes</th>
-                    <th className="px-4 py-2 text-left">Type</th>
-                    <th className="px-4 py-2 text-left">Region</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="hover:bg-gray-50">
-                    <td className="px-4 py-2">prod-cluster</td>
-                    <td className="px-4 py-2">6</td>
-                    <td className="px-4 py-2">EKS</td>
-                    <td className="px-4 py-2">us-west-1</td>
-                  </tr>
-                  <tr className="hover:bg-gray-50">
-                    <td className="px-4 py-2">dev-cluster</td>
-                    <td className="px-4 py-2">2</td>
-                    <td className="px-4 py-2">EKS</td>
-                    <td className="px-4 py-2">us-west-1</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        {/* Clusters */}
+        <Section
+          title={`Clusters (${clusters.length})`}
+          isOpen={clusterOpen}
+          toggle={() => setClusterOpen(!clusterOpen)}
+          columns={clusterColumns}
+          rows={clusters}
+          renderRow={renderClusterRow}
+        />
 
-        {/* IAM Users Section */}
-        <div className="border rounded-lg overflow-hidden">
-          <div
-            onClick={() => setIamOpen(!iamOpen)}
-            className="bg-gray-100 px-4 py-2 flex justify-between items-center cursor-pointer"
-          >
-            <span className="font-semibold text-gray-700">IAM Users (89)</span>
-            {iamOpen ? <FaChevronUp /> : <FaChevronDown />}
-          </div>
-          {iamOpen && (
-            <div className="overflow-x-auto transition-all duration-300 ease-in-out">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-100 text-xs font-semibold uppercase text-gray-500">
-                  <tr>
-                    <th className="px-4 py-2 text-left">Username</th>
-                    <th className="px-4 py-2 text-left">Role</th>
-                    <th className="px-4 py-2 text-left">Created Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="hover:bg-gray-50">
-                    <td className="px-4 py-2">dev.analyst</td>
-                    <td className="px-4 py-2">Analyst</td>
-                    <td className="px-4 py-2">2023-07-02</td>
-                  </tr>
-                  <tr className="hover:bg-gray-50">
-                    <td className="px-4 py-2">splunkroot</td>
-                    <td className="px-4 py-2">Operations</td>
-                    <td className="px-4 py-2">2023-05-06</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+        {/* IAM Users */}
+        <Section
+          title={`IAM Users (${iam_users.length})`}
+          isOpen={iamOpen}
+          toggle={() => setIamOpen(!iamOpen)}
+          columns={iamColumns}
+          rows={iam_users}
+          renderRow={renderIamRow}
+        />
       </div>
     </div>
   );
 };
 
-export default cloudAssetScanInfoPage;
+/** Generic Section Component */
+const Section = ({ title, isOpen, toggle, columns, rows, renderRow }) => (
+  <div className="border rounded-lg overflow-hidden">
+    <div
+      onClick={toggle}
+      className="bg-gray-100 px-4 py-2 flex justify-between items-center cursor-pointer"
+    >
+      <span className="font-semibold text-gray-700">{title}</span>
+      {isOpen ? <FaChevronUp /> : <FaChevronDown />}
+    </div>
+    {isOpen && (
+      <div className="overflow-x-auto">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-100 text-xs font-semibold uppercase text-gray-500">
+            <tr>
+              {columns.map((col, idx) => (
+                <th key={idx} className="px-4 py-2 text-left">
+                  {col}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td className="px-4 py-2 text-gray-500" colSpan={columns.length}>
+                  No data available
+                </td>
+              </tr>
+            ) : (
+              rows.map((row, idx) => renderRow(row, idx))
+            )}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+);
+
+export default CloudAssetScanInfoPage;
