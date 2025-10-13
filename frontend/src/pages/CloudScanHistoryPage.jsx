@@ -2,6 +2,7 @@ import { CloudIcon, DatabaseIcon, FunnelIcon } from 'lucide-react';
 import { FaPlay, FaDownload } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import axios from "axios";
 
 export default function CloudScanHistoryPage() {
   const navigate = useNavigate();
@@ -37,6 +38,26 @@ export default function CloudScanHistoryPage() {
   const indexOfLastItem = indexOfFirstItem + entriesPerPage;
   const currentEntries = history.slice(indexOfFirstItem, indexOfLastItem);
 
+    const handleExport = async () => {
+    try {
+      console.log("Export button clicked");
+      const response = await axios.get("http://localhost:8000/export/scan-history", {
+        responseType: "blob", // important for downloading files
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "scan_history_export.csv"); // filename
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("Export failed:", err);
+      alert("Failed to export devices");
+    }
+  };
+
   return (
     <div className="p-6 bg-[#F8FAFC] min-h-screen">
       {/* Page Title */}
@@ -51,10 +72,13 @@ export default function CloudScanHistoryPage() {
             <FaPlay className="text-xs" />
             Start New Scan
           </button>
-          <button className="flex items-center gap-2 bg-[#F3F4F6] text-[#374151] border border-[#D1D5DB] px-4 py-2 rounded-md font-medium text-sm">
-            <FaDownload className="text-xs" />
-            Export
-          </button>
+          <button
+                onClick={handleExport}
+                className="flex items-center gap-2 bg-[#F3F4F6] text-[#374151] border border-[#D1D5DB] px-4 py-2 rounded-md font-medium text-sm"
+              >
+                <FaDownload className="text-xs" />
+                Export
+              </button>
         </div>
       </div>
 

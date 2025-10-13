@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from backend.app.services import exporter
-from backend.routes import scans  # reuse scan functions
+from backend.routes import scans
+from backend.routes.dashboard import get_summary, get_recent_scan  # ✅ Reuse existing functions
 
 router = APIRouter()
 
@@ -9,44 +10,86 @@ router = APIRouter()
 def export_data(dataset: str, format: str = "csv", ip: str = None):
     """
     Export data for given dataset.
-    Supported datasets: scan-history, devices-table, applications, system-details
+    Supported datasets:
+      - scan-history
+      - devices-table
+      - applications (requires ip)
+      - system-details (requires ip)
+      - dashboard-overview (summary + recent scan combined)
     format: csv | json
     """
     try:
-        # 1. Pick the right function
+        # -------------------------
+        # 1. Select dataset source
+        # -------------------------
         if dataset == "scan-history":
             data = scans.get_scan_history()
+
         elif dataset == "devices-table":
             data = scans.get_devices_table()
+
         elif dataset == "applications":
             if not ip:
                 raise HTTPException(status_code=400, detail="IP is required for applications export")
             data = scans.get_applications(ip)
+
         elif dataset == "system-details":
             if not ip:
                 raise HTTPException(status_code=400, detail="IP is required for system-details export")
             data = scans.get_system_details(ip)
+
+        elif dataset == "dashboard-overview":
+            # ✅ Reuse your summary + recent scan routes
+            summary_data = get_summary()
+            recent_scan_data = get_recent_scan()
+
+            data = {
+                "summary": summary_data,
+                "recent_scan": recent_scan_data
+            }
+
         else:
             raise HTTPException(status_code=400, detail="Unsupported dataset")
 
         if not data:
             raise HTTPException(status_code=404, detail="No data found")
 
-        # 2. Format export
+        # -------------------------
+        # 2. Export formatting
+        # -------------------------
         if format == "csv":
-            # Flatten depending on dataset shape
-            if isinstance(data, list):
-                # list of dicts (scan-history, devices-table)
+            if dataset == "dashboard-overview":
+                # Flatten summary + recent scan into a readable CSV
+                summary_rows = [["Metric", "Value"]] + [[k, v] for k, v in data["summary"].items()]
+                csv_rows = summary_rows + [[""]]  # blank line separator
+
+                recent_scan = data.get("recent_scan", [])
+                if recent_scan:
+                    csv_rows += [["IP", "Hostname", "OS", "Ports", "MAC", "Type"]]
+                    for d in recent_scan:
+                        csv_rows.append([
+                            d.get("ip", ""),
+                            d.get("hostname", ""),
+                            d.get("os", ""),
+                            d.get("ports", ""),
+                            d.get("mac", ""),
+                            d.get("type", ""),
+                        ])
+
+                return exporter.export_to_csv([], csv_rows, "dashboard-overview.csv")
+
+            elif isinstance(data, list):
                 headers = list(data[0].keys())
                 rows = [list(item.values()) for item in data]
+                return exporter.export_to_csv(headers, rows, f"{dataset}.csv")
+
             elif isinstance(data, dict):
-                # single dict (applications, system-details)
                 headers = list(data.keys())
                 rows = [list(data.values())]
+                return exporter.export_to_csv(headers, rows, f"{dataset}.csv")
+
             else:
                 raise HTTPException(status_code=500, detail="Unsupported data structure")
-
-            return exporter.export_to_csv(headers, rows, f"{dataset}.csv")
 
         elif format == "json":
             return exporter.export_to_json(data, f"{dataset}.json")

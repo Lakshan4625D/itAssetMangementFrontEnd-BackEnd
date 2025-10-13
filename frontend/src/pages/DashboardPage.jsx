@@ -44,9 +44,24 @@ export default function DashboardPage() {
     fetchRecentScan();
   }, []);
 
-  // Placeholder Export function (for backend later)
-  const handleExport = () => {
-    alert("Export functionality will be implemented after backend is ready.");
+  // 🔽 Export function
+  const handleExport = async () => {
+    try {
+      const response = await axios.get("http://localhost:8000/export/dashboard-overview", {
+        responseType: "blob", // important for downloading files
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "dashboard_export.csv"); // filename
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("Export failed:", err);
+      alert("Failed to export devices");
+    }
   };
 
   if (loading) {

@@ -56,6 +56,28 @@ const ScanHistoryPage = () => {
       });
   };
 
+  // Export scan history to CSV
+  const handleExport = () => {
+    if (subnets.length === 0) return;
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Subnet,Last Scan,Device Count,IP,Hostname,OS,MAC,Type,Last Seen\n";
+
+    subnets.forEach((subnet) => {
+      subnet.devices.forEach((device) => {
+        csvContent += `${subnet.subnet},${subnet.lastScan},${subnet.devices.length},${device.ip},${device.hostname},${device.os},${device.mac},${device.type},${device.lastSeen}\n`;
+      });
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "scan_history.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   useEffect(() => {
     fetchScanHistory();
   }, []);
@@ -88,7 +110,10 @@ const ScanHistoryPage = () => {
         >
           <FaPlay className="text-xs" /> {loadingScan ? "Scanning..." : "Start New Scan"}
         </button>
-        <button className="flex items-center gap-2 bg-[#F3F4F6] text-[#374151] border border-[#D1D5DB] px-4 py-2 rounded-md font-medium text-sm">
+        <button
+          onClick={handleExport}
+          className="flex items-center gap-2 bg-[#F3F4F6] text-[#374151] border border-[#D1D5DB] px-4 py-2 rounded-md font-medium text-sm"
+        >
           <FaDownload className="text-xs" /> Export
         </button>
       </div>

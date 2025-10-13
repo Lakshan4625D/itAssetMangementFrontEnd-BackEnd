@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FaPlay, FaDownload } from "react-icons/fa";
+import axios from "axios";
 
 export default function FinalAdditionalInfoPage() {
   const [ip, setIp] = useState("");
@@ -33,6 +34,30 @@ export default function FinalAdditionalInfoPage() {
     }
   };
 
+  // 🔽 Export function
+  const handleExport = async () => {
+    try {
+      const response = await axios.get(`http://localhost:8000/export/system-details`, {
+        params: {
+          ip: ip,        // IP address required by the API
+          format: "csv"  // or "json"
+        },
+        responseType: "blob", // important for downloading files
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "AdditonalInfo_export.csv"); // filename
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("Export failed:", err);
+      alert("Failed to export devices");
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Page Title */}
@@ -43,10 +68,14 @@ export default function FinalAdditionalInfoPage() {
             <FaPlay className="text-xs" />
             Start New Scan
           </button>
-          <button className="flex items-center gap-2 bg-[#F3F4F6] text-[#374151] border border-[#D1D5DB] px-4 py-2 rounded-md font-medium text-sm">
-            <FaDownload className="text-xs" />
-            Export
-          </button>
+           {/* Export Button */}
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 bg-[#F3F4F6] text-[#374151] border border-[#D1D5DB] px-4 py-2 rounded-md font-medium text-sm"
+            >
+              <FaDownload className="text-xs" />
+              Export
+            </button>
         </div>
       </div>
 

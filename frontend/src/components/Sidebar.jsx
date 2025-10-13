@@ -54,15 +54,7 @@ export default function Sidebar() {
             <span>Devices</span>
           </NavLink>
 
-          <NavLink
-            to="/"
-            className={({ isActive }) =>
-              `${navItemClass} ${isActive ? activeClass : ''}`
-            }
-          >
-            <Radio className="w-4 h-4" />
-            <span>Active Devices</span>
-          </NavLink>
+          
 
           <NavLink
             to="/scan-history"

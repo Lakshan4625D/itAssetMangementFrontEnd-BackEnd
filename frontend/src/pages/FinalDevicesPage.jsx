@@ -67,7 +67,7 @@ export default function FinalDevicesPage() {
   // 🔽 Export function
   const handleExport = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/export/scans-devices", {
+      const response = await axios.get("http://localhost:8000/export/devices-table", {
         responseType: "blob", // important for downloading files
       });
 
