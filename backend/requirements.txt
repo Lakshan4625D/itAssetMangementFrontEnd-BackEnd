@@ -1,0 +1,24 @@
+#pip install -r requirements.txt
+fastapi
+uvicorn
+jinja2
+mysql-connector-python
+pymysql
+sqlalchemy
+python-nmap
+pysnmp
+psutil
+requests
+paramiko
+pywinrm
+python-multipart
+boto3
+azure-identity
+azure-mgmt-compute
+azure-mgmt-storage
+azure-mgmt-containerservice
+google-cloud-compute
+google-cloud-storage
+google-cloud-container
+google-auth
+google-api-python-client
