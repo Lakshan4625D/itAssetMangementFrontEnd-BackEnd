@@ -54,7 +54,7 @@ export default function Sidebar() {
             <span>Devices</span>
           </NavLink>
 
-          
+            
 
           <NavLink
             to="/scan-history"
