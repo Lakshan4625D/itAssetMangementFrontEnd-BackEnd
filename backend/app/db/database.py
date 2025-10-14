@@ -22,3 +22,10 @@ def get_db():
         yield db
     finally:
         db.close()
+
+DB_CONFIG = {
+    'host': 'localhost',
+    'user': 'root',
+    'password': 'root',
+    'database': 'network_scanner'
+}

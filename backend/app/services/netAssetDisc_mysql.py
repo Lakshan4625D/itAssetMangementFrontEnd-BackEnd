@@ -16,14 +16,7 @@ import mysql.connector
 from datetime import datetime
 import time
 import xml.etree.ElementTree as ET
-
-# Database configuration
-DB_CONFIG = {
-    'user': 'root',
-    'password': 'root',
-    'host': 'localhost',
-    'database': 'network_scanner'
-}
+from backend.app.db.database import DB_CONFIG
 
 def get_active_interface_info():
     """

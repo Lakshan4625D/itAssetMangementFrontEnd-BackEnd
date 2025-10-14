@@ -6,13 +6,7 @@ from azure.core.exceptions import AzureError
 import mysql.connector
 import requests
 from datetime import datetime
-
-DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'root',
-    'database': 'network_scanner'
-}
+from backend.app.db.database import DB_CONFIG
 
 
 def get_azure_resources(tenant_id, client_id, client_secret, subscription_id):
