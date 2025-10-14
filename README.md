@@ -100,9 +100,16 @@ A lightweight, Python-based network asset discovery and inventory tool that scan
 
 8. **Run the application**
 
-    To run backend:   uvicorn backend.app.main_app:app --reload --host 0.0.0.0 --port 8000
-    To run frontend:  cd frontend
-                      npm run dev
+    To run backend:  
+    ```bash
+    uvicorn backend.app.main_app:app --reload --host 0.0.0.0 --port 8000
+    ```
+
+    To run frontend:  
+    ```bash
+    cd frontend
+    npm run dev
+    ```
 
 ---
 
@@ -140,3 +147,4 @@ If you need help, open an issue in the repo or contact the maintainer: `lakshan4
 
 
                   
+
