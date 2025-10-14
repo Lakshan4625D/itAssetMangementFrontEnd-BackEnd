@@ -104,7 +104,7 @@ A lightweight, Python-based network asset discovery and inventory tool that scan
     ```bash
     uvicorn backend.app.main_app:app --reload --host 0.0.0.0 --port 8000
     ```
-<br>
+    
     To run frontend:  
     ```bash
     cd frontend
@@ -147,5 +147,6 @@ If you need help, open an issue in the repo or contact the maintainer: `lakshan4
 
 
                   
+
 
 
