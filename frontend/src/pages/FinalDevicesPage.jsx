@@ -8,6 +8,7 @@ export default function FinalDevicesPage() {
   const [devices, setDevices] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [error, setError] = useState(null);
+  const [loadingScan, setLoadingScan] = useState(false);
 
   const entriesPerPage = 5;
 
@@ -40,6 +41,38 @@ export default function FinalDevicesPage() {
       console.error("Failed to fetch devices:", err);
       setError("Could not load devices");
     }
+  };
+
+  // Poll scan status until finished
+  const pollScanStatus = () => {
+    const interval = setInterval(() => {
+      axios.get("http://localhost:8000/network/scan-status")
+        .then((res) => {
+          const status = res.data.status;
+          if (status === "finished" || status === "error") {
+            clearInterval(interval);
+            setLoadingScan(false);
+            fetchDevices();
+          }
+        })
+        .catch(() => {
+          clearInterval(interval);
+          setLoadingScan(false);
+        });
+    }, 3000);
+  };
+
+  // Start scan
+  const handleStartScan = () => {
+    setLoadingScan(true);
+    axios.post("http://localhost:8000/network/start-scan")
+      .then(() => {
+        pollScanStatus();
+      })
+      .catch(() => {
+        setError("Failed to start scan");
+        setLoadingScan(false);
+      });
   };
 
   useEffect(() => {
@@ -92,9 +125,17 @@ export default function FinalDevicesPage() {
           <div>
             <h1 className="text-xl font-semibold mb-2">Devices</h1>
             <div className="flex gap-3">
-              <button className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-md font-medium text-sm">
+              <button
+                onClick={handleStartScan}
+                disabled={loadingScan}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm ${
+                  loadingScan
+                    ? "bg-gray-400 cursor-not-allowed text-white"
+                    : "bg-[#2563EB] text-white hover:bg-blue-700"
+                }`}
+              >
                 <FaPlay className="text-xs" />
-                Start New Scan
+                {loadingScan ? "Scanning..." : "Start New Scan"}
               </button>
               <button
                 onClick={handleExport}

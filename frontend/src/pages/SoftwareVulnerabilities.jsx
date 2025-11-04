@@ -43,9 +43,6 @@ const SoftwareVulnerabilities = () => {
             Software Vulnerabilities
           </h2>
           <div className="flex gap-2">
-            <button className="bg-blue-600 text-white px-4 py-2 text-sm rounded-md hover:bg-blue-700">
-              Scan for Malwares
-            </button>
             <button className="flex items-center gap-2 bg-[#F3F4F6] border border-[#D1D5DB] text-[#374151] px-4 py-2 rounded-md text-sm font-medium">
               <FaDownload className="text-sm" /> Export
             </button>

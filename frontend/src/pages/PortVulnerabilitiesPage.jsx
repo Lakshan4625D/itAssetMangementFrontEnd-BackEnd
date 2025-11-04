@@ -37,10 +37,6 @@ export default function PortVulnerabilitiesPage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div className="flex items-center gap-4 flex-wrap">
             <h1 className="text-xl font-semibold">Port Vulnerabilities</h1>
-            <button className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-md font-medium text-sm hover:bg-[#1E4DB7] transition">
-              <FaShieldAlt className="text-sm" />
-              Scan for Vulnerabilities
-            </button>
             <button className="flex items-center gap-2 bg-[#F3F4F6] border border-[#D1D5DB] text-[#374151] px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-200 transition">
               <FaDownload className="text-sm" />
               Export
