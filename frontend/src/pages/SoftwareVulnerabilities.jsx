@@ -16,7 +16,7 @@ const SoftwareVulnerabilities = () => {
   const rowsPerPage = 5;
 
   useEffect(() => {
-    fetch("http://localhost:8000/malware-detections")
+    fetch("http://backend:8000/malware-detections")
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch malware detections");
         return res.json();

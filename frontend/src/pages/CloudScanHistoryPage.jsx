@@ -43,7 +43,7 @@ export default function CloudScanHistoryPage() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await fetch("http://localhost:8000/cloud-scan-history");
+        const res = await fetch("http://backend:8000/cloud-scan-history");
         const data = await res.json();
         setHistory(data.history || []);
       } catch (err) {
@@ -80,7 +80,7 @@ export default function CloudScanHistoryPage() {
     }
 
     try {
-      const res = await fetch("http://localhost:8000/cloud-asset/scan", {
+      const res = await fetch("http://backend:8000/cloud-asset/scan", {
         method: "POST",
         body: form,
       });
@@ -93,7 +93,7 @@ export default function CloudScanHistoryPage() {
       alert(`${scanProvider.toUpperCase()} scan completed successfully!`);
       setShowModal(false);
       // Refresh scan history
-      const historyRes = await fetch("http://localhost:8000/cloud-scan-history");
+      const historyRes = await fetch("http://backend:8000/cloud-scan-history");
       const historyData = await historyRes.json();
       setHistory(historyData.history || []);
     } catch (error) {
@@ -114,7 +114,7 @@ export default function CloudScanHistoryPage() {
     const handleExport = async () => {
     try {
       console.log("Export button clicked");
-      const response = await axios.get("http://localhost:8000/export/scan-history", {
+      const response = await axios.get("http://backend:8000/export/scan-history", {
         responseType: "blob", // important for downloading files
       });
 

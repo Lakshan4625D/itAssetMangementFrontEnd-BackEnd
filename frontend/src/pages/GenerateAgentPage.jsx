@@ -27,7 +27,7 @@ export default function GenerateAgentPage() {
 
   const fetchAgents = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/agents/fetchall");
+      const response = await axios.get("http://backend:8000/agents/fetchall");
       setAgents(response.data.agents || []);
     } catch (error) {
       console.error("Error fetching agents:", error);
@@ -45,7 +45,7 @@ export default function GenerateAgentPage() {
 
     try {
       const response = await axios.post(
-        "http://localhost:8000/agents/build",
+        "http://backend:8000/agents/build",
         null,
         {
           params: { nickname, os: backendOs },
@@ -94,7 +94,7 @@ export default function GenerateAgentPage() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this agent?")) return;
     try {
-      await axios.delete(`http://localhost:8000/agents/${id}`);
+      await axios.delete(`http://backend:8000/agents/${id}`);
       setAgents((prev) => prev.filter((agent) => agent.id !== id));
       alert("✅ Agent deleted successfully");
     } catch (error) {

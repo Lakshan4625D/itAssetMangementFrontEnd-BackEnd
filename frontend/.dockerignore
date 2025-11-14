@@ -1,0 +1,22 @@
+# Node dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Build output
+dist/
+build/
+
+# Git and editor files
+.git/
+.vscode/
+.idea/
+.DS_Store
+
+# Environment files
+.env
+
+# Docker and system files
+Dockerfile*
+docker-compose.yml

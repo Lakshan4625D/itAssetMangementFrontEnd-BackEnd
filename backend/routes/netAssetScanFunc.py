@@ -5,7 +5,7 @@ import asyncio
 import threading
 import time
 
-from backend.app.services.netAssetDisc_mysql import scan_network_combined
+from app.services.netAssetDisc_mysql import scan_network_combined
 
 router = APIRouter()
 

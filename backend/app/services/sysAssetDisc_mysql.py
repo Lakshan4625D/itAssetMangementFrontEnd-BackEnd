@@ -3,7 +3,7 @@ import paramiko
 import json
 import mysql.connector
 from datetime import datetime
-from backend.app.db.database import DB_CONFIG
+from app.db.database import DB_CONFIG
 
 def run_winrm_command(ip, username, password):
     session = winrm.Session(f'http://{ip}:5985/wsman', auth=(username, password), transport='ntlm')

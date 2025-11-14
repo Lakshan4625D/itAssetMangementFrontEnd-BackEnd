@@ -9,7 +9,7 @@ const ScanHistoryPage = () => {
 
   // Fetch scan history
   const fetchScanHistory = () => {
-    axios.get("http://localhost:8000/scan-history")
+    axios.get("http://backend:8000/scan-history")
       .then((res) => {
         const sorted = [...res.data].sort((a, b) => {
           const dateA = new Date(a.lastScan);
@@ -27,7 +27,7 @@ const ScanHistoryPage = () => {
   // Poll scan status until finished
   const pollScanStatus = () => {
     const interval = setInterval(() => {
-      axios.get("http://localhost:8000/network/scan-status")
+      axios.get("http://backend:8000/network/scan-status")
         .then((res) => {
           const status = res.data.status;
           if (status === "finished" || status === "error") {
@@ -46,7 +46,7 @@ const ScanHistoryPage = () => {
   // Start scan
   const handleStartScan = () => {
     setLoadingScan(true);
-    axios.post("http://localhost:8000/network/start-scan")
+    axios.post("http://backend:8000/network/start-scan")
       .then(() => {
         pollScanStatus();
       })

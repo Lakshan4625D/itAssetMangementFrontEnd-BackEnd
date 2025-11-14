@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
-from backend.app.services import exporter
-from backend.routes import scans
-from backend.routes.dashboard import get_summary, get_recent_scan  # ✅ Reuse existing functions
+from app.services import exporter
+from routes import scans
+from routes.dashboard import get_summary, get_recent_scan  # ✅ Reuse existing functions
 
 router = APIRouter()
 

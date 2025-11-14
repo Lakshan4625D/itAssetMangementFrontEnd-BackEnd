@@ -16,7 +16,7 @@ export default function PortVulnerabilitiesPage() {
   const itemsPerPage = 5;
 
   useEffect(() => {
-    fetch("http://localhost:8000/vulnerabilities/all")
+    fetch("http://backend:8000/vulnerabilities/all")
       .then((res) => res.json())
       .then((data) => {
         setVulnerabilities(data.vulnerabilities || []);

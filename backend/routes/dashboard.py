@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
-from backend.app.db.database import engine  # same import style you used
-from backend.routes.scans import get_cloud_summary  # reuse existing function
+from app.db.database import engine  # same import style you used
+from routes.scans import get_cloud_summary  # reuse existing function
 
 router = APIRouter()
 

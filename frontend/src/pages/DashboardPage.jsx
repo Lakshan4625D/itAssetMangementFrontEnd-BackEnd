@@ -17,7 +17,7 @@ export default function DashboardPage() {
 
   const fetchSummary = async () => {
     try {
-      const res = await axios.get(`http://localhost:8000/dashboard/summary`);
+      const res = await axios.get(`http://backend:8000/dashboard/summary`);
       setSummary(res.data);
       setError(null);
     } catch (err) {
@@ -28,7 +28,7 @@ export default function DashboardPage() {
 
   const fetchRecentScan = async () => {
     try {
-      const res = await axios.get(`http://localhost:8000/dashboard/recent-scan`);
+      const res = await axios.get(`http://backend:8000/dashboard/recent-scan`);
       setRecentDevices(res.data || []);
       setError(null);
     } catch (err) {
@@ -47,7 +47,7 @@ export default function DashboardPage() {
   // 🔽 Export function
   const handleExport = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/export/dashboard-overview", {
+      const response = await axios.get("http://backend:8000/export/dashboard-overview", {
         responseType: "blob", // important for downloading files
       });
 

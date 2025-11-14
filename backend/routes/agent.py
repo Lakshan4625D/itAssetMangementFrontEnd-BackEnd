@@ -3,8 +3,8 @@ from fastapi import APIRouter, Query, HTTPException
 from fastapi.responses import FileResponse
 from pathlib import Path
 from sqlalchemy import text
-from backend.app.services.agent_builder import build_agent
-from backend.app.db.database import engine  # your existing engine
+from app.services.agent_builder import build_agent
+from app.db.database import engine  # your existing engine
 
 router = APIRouter()
 

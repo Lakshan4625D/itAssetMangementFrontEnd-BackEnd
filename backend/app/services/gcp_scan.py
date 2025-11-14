@@ -2,7 +2,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import mysql.connector
 import datetime
-from backend.app.db.database import DB_CONFIG
+from app.db.database import DB_CONFIG
 
 def get_gcp_resources(project_id, credentials_path):
     result = {

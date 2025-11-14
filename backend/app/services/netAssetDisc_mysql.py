@@ -16,7 +16,7 @@ import mysql.connector
 from datetime import datetime
 import time
 import xml.etree.ElementTree as ET
-from backend.app.db.database import DB_CONFIG
+from app.db.database import DB_CONFIG
 
 def get_active_interface_info():
     """

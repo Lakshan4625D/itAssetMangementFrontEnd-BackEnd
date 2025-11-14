@@ -13,7 +13,7 @@ export default function FinalAdditionalInfoPage() {
     setLoading(true);
     try {
       // Step 1: Trigger scan
-      const res = await fetch("http://localhost:8000/system/scan", {
+      const res = await fetch("http://backend:8000/system/scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ip, username, password }),
@@ -22,7 +22,7 @@ export default function FinalAdditionalInfoPage() {
       if (!res.ok) throw new Error("Failed to start scan");
 
       // Step 2: Immediately fetch details from DB
-      const detailsRes = await fetch(`http://localhost:8000/system-details/${ip}`);
+      const detailsRes = await fetch(`http://backend:8000/system-details/${ip}`);
       if (!detailsRes.ok) throw new Error("Failed to fetch details from DB");
 
       const detailsData = await detailsRes.json();
@@ -37,7 +37,7 @@ export default function FinalAdditionalInfoPage() {
   // 🔽 Export function
   const handleExport = async () => {
     try {
-      const response = await axios.get(`http://localhost:8000/export/system-details`, {
+      const response = await axios.get(`http://backend:8000/export/system-details`, {
         params: {
           ip: ip,        // IP address required by the API
           format: "csv"  // or "json"

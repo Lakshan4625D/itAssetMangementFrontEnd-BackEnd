@@ -1,7 +1,7 @@
 # backend/routes/sysAssetScanFunc.py
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from backend.app.services import sysAssetDisc_mysql
+from app.services import sysAssetDisc_mysql
 
 router = APIRouter()
 

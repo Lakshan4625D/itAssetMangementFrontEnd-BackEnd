@@ -1,0 +1,27 @@
+# ---------- Stage 1: Build ----------
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files and install deps
+COPY package*.json ./
+RUN npm cache clean --force && npm install --legacy-peer-deps
+
+# Copy all frontend source
+COPY . .
+
+# Build production-ready files
+RUN npm run build
+
+
+# ---------- Stage 2: Serve ----------
+FROM nginx:1.27-alpine
+
+# Copy built files from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Expose port
+EXPOSE 80
+
+# Run Nginx
+CMD ["nginx", "-g", "daemon off;"]

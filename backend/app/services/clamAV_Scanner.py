@@ -4,7 +4,7 @@ import paramiko
 import winrm
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from backend.app.db.database import DB_CONFIG
+from app.db.database import DB_CONFIG
 
 MAX_THREADS = 4
 SCAN_TIMEOUT = 300  # seconds

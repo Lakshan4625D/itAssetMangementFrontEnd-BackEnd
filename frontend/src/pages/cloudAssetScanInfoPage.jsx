@@ -23,7 +23,7 @@ const CloudAssetScanInfoPage = () => {
   useEffect(() => {
     const fetchScanData = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/cloud-scans/${scan_id}`);
+        const res = await fetch(`http://backend:8000/cloud-scans/${scan_id}`);
         if (!res.ok) throw new Error("Failed to fetch scan data");
         const data = await res.json();
         setScanData(data);

@@ -1,12 +1,12 @@
 # backend/routes/cloud_assets.py
 from fastapi import APIRouter, HTTPException, Form
 from sqlalchemy import text
-from backend.app.db.database import engine  # same style you used
+from app.db.database import engine  # same style you used
 
 # Import your scan functions
-from backend.app.services.aws_scan import get_aws_resources
-from backend.app.services.azure_scan import get_azure_resources
-from backend.app.services.gcp_scan import get_gcp_resources
+from app.services.aws_scan import get_aws_resources
+from app.services.azure_scan import get_azure_resources
+from app.services.gcp_scan import get_gcp_resources
 
 router = APIRouter()
 

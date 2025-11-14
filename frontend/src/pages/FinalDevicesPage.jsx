@@ -15,7 +15,7 @@ export default function FinalDevicesPage() {
   // Fetch devices from backend
   const fetchDevices = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/devices-table");
+      const res = await axios.get("http://backend:8000/devices-table");
 
       const flatDevices = res.data.flatMap((subnetGroup) =>
         subnetGroup.devices.map((device) => ({
@@ -46,7 +46,7 @@ export default function FinalDevicesPage() {
   // Poll scan status until finished
   const pollScanStatus = () => {
     const interval = setInterval(() => {
-      axios.get("http://localhost:8000/network/scan-status")
+      axios.get("http://backend:8000/network/scan-status")
         .then((res) => {
           const status = res.data.status;
           if (status === "finished" || status === "error") {
@@ -65,7 +65,7 @@ export default function FinalDevicesPage() {
   // Start scan
   const handleStartScan = () => {
     setLoadingScan(true);
-    axios.post("http://localhost:8000/network/start-scan")
+    axios.post("http://backend:8000/network/start-scan")
       .then(() => {
         pollScanStatus();
       })
@@ -100,7 +100,7 @@ export default function FinalDevicesPage() {
   // 🔽 Export function
   const handleExport = async () => {
     try {
-      const response = await axios.get("http://localhost:8000/export/devices-table", {
+      const response = await axios.get("http://backend:8000/export/devices-table", {
         responseType: "blob", // important for downloading files
       });
 

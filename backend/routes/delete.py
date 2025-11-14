@@ -2,7 +2,7 @@
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import create_engine, text
 import re
-from backend.app.db.database import engine  
+from app.db.database import engine  
 
 router = APIRouter()
 

@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 
 # Database connection URL (adjust user/pass/host/db if needed)
-DB_URL = "mysql+pymysql://root:root@localhost/network_scanner"
+DB_URL = "mysql+pymysql://root:root@mysql_db:3306/network_scanner"
 
 # Create engine
 engine = create_engine(
@@ -24,7 +24,8 @@ def get_db():
         db.close()
 
 DB_CONFIG = {
-    'host': 'localhost',
+    'port' : 3306,
+    'host': 'mysql_db',
     'user': 'root',
     'password': 'root',
     'database': 'network_scanner'

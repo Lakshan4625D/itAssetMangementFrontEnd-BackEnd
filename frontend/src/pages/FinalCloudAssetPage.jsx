@@ -59,7 +59,7 @@ export default function FinalCloudAssetPage() {
 
   // Fetch summary counts once
   const fetchSummary = () => {
-    fetch("http://localhost:8000/cloud-assets/summary")
+    fetch("http://backend:8000/cloud-assets/summary")
       .then((res) => res.json())
       .then((data) =>
         setSummary({
@@ -80,7 +80,7 @@ export default function FinalCloudAssetPage() {
     setLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:8000/cloud/${activeProvider}/latest`
+        `http://backend:8000/cloud/${activeProvider}/latest`
       );
       const data = await res.json();
       setTableData(data);
@@ -125,7 +125,7 @@ export default function FinalCloudAssetPage() {
     }
 
     try {
-      const res = await fetch("http://localhost:8000/cloud-asset/scan", {
+      const res = await fetch("http://backend:8000/cloud-asset/scan", {
         method: "POST",
         body: form,
       });

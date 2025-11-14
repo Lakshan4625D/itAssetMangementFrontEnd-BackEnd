@@ -2,7 +2,7 @@ import boto3
 import mysql.connector
 from botocore.exceptions import BotoCoreError, NoCredentialsError, ClientError
 from mysql.connector import Error
-from backend.app.db.database import DB_CONFIG
+from app.db.database import DB_CONFIG
 
 def get_aws_resources(access_key, secret_key, region='us-east-1'):
     result = {

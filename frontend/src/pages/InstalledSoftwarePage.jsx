@@ -15,7 +15,7 @@ export default function InstalledSoftwarePage() {
 
   const fetchSoftware = async () => {
     try {
-      const res = await axios.post("http://localhost:8000/system/scan", {
+      const res = await axios.post("http://backend:8000/system/scan", {
         ip,
         username,
         password,
