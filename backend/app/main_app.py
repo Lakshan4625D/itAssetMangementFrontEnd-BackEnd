@@ -26,12 +26,14 @@ app.include_router(cloud_asset.router)
 origins = [
     "http://localhost",
     "http://localhost:5173",
-    "http://frontend:5173"
-    "http://frontend:80"
+    "http://frontend:5173",
+    "http://frontend:80",
+    "http://backend:8000",
+    "http://localhost:8000"
 ]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[origins],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
