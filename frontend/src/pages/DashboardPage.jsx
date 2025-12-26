@@ -14,6 +14,7 @@ export default function DashboardPage() {
   const [recentDevices, setRecentDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [loadingScan, setLoadingScan] = useState(false);
 
   const fetchSummary = async () => {
     try {
@@ -43,6 +44,38 @@ export default function DashboardPage() {
     fetchSummary();
     fetchRecentScan();
   }, []);
+  
+  const pollScanStatus = () => {
+    const interval = setInterval(() => {
+      axios.get("http://localhost:8000/network/scan-status")
+        .then((res) => {
+          const status = res.data.status;
+          if (status === "finished" || status === "error") {
+            clearInterval(interval);
+            setLoadingScan(false);
+            fetchRecentScan();
+            fetchSummary();
+          }
+        })
+        .catch(() => {
+          clearInterval(interval);
+          setLoadingScan(false);
+        });
+    }, 3000);
+  };
+
+  // Start scan
+  const handleStartScan = () => {
+    setLoadingScan(true);
+    axios.post("http://localhost:8000/network/start-scan")
+      .then(() => {
+        pollScanStatus();
+      })
+      .catch(() => {
+        setError("Failed to start scan");
+        setLoadingScan(false);
+      });
+  };
 
   // 🔽 Export function
   const handleExport = async () => {
@@ -83,10 +116,18 @@ export default function DashboardPage() {
           </h1>
           <div className="flex gap-3">
             {/* Start New Scan Button */}
-            <button className="flex items-center gap-2 bg-[#2563EB] text-white px-4 py-2 rounded-md font-medium text-sm">
-              <FaPlay className="text-xs" />
-              Start New Scan
-            </button>
+            <button
+                onClick={handleStartScan}
+                disabled={loadingScan}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md font-medium text-sm ${
+                  loadingScan
+                    ? "bg-gray-400 cursor-not-allowed text-white"
+                    : "bg-[#2563EB] text-white hover:bg-blue-700"
+                }`}
+              >
+                <FaPlay className="text-xs" />
+                {loadingScan ? "Scanning..." : "Start New Scan"}
+              </button>
 
             {/* Export Button */}
             <button
