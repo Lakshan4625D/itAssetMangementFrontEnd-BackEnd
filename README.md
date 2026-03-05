@@ -138,7 +138,7 @@ Please include tests for any non-trivial new behavior.
 
 ## Contact
 
-If you need help, open an issue in the repo or contact the maintainer: `lakshan4625d@example.com`.
+If you need help, open an issue in the repo or contact the maintainer: `lakshan4625d@gmail.com`.
 
 ---
 
@@ -147,6 +147,7 @@ If you need help, open an issue in the repo or contact the maintainer: `lakshan4
 
 
                   
+
 
 
 
