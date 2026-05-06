@@ -30,45 +30,121 @@ type SystemInfo struct {
 	InstalledApps []string `json:"installed_software"`
 }
 
+type Message struct {
+	Type    string     `json:"type"`
+	Token   string     `json:"token,omitempty"`
+	Command string     `json:"command,omitempty"`
+	Data    SystemInfo `json:"data,omitempty"`
+}
+
 const (
-	staticToken = __STATIC_TOKEN__ // TOKEN PLACEHOLDER
+	staticToken = __STATIC_TOKEN__
 	configFile  = "system_config.json"
-	wsServerURL = "ws://localhost:8000/ws"
+	wsServerURL = "ws://localhost:8000/ws/agent"
 )
 
 func main() {
 	if runtime.GOOS != "linux" {
-		log.Fatal("This agent is intended for Linux only.")
+		log.Fatal("Linux only")
 	}
 
 	for {
-		log.Println("Connecting to server...")
-		ws, err := websocket.Dial(wsServerURL, "", "http://localhost/")
+		connectAndRun()
+		time.Sleep(10 * time.Second)
+	}
+}
+
+func connectAndRun() {
+	log.Println("Connecting to backend...")
+
+	ws, err := websocket.Dial(wsServerURL, "", "http://localhost/")
+	if err != nil {
+		log.Printf("Connection failed: %v", err)
+		return
+	}
+	defer ws.Close()
+
+	var raw string
+
+	err = websocket.Message.Receive(ws, &raw)
+	if err != nil {
+		log.Printf("Auth request failed: %v", err)
+		return
+	}
+
+	var msg Message
+	json.Unmarshal([]byte(raw), &msg)
+
+	if msg.Type != "AUTH_REQUEST" {
+		log.Println("Invalid auth flow")
+		return
+	}
+
+	authResp := Message{
+		Type:  "AUTH_RESPONSE",
+		Token: staticToken,
+	}
+
+	data, _ := json.Marshal(authResp)
+	websocket.Message.Send(ws, string(data))
+
+	err = websocket.Message.Receive(ws, &raw)
+	if err != nil {
+		log.Printf("Auth response failed: %v", err)
+		return
+	}
+
+	json.Unmarshal([]byte(raw), &msg)
+
+	if msg.Type != "AUTH_OK" {
+		log.Println("Authentication failed")
+		return
+	}
+
+	log.Println("Authenticated")
+
+	go heartbeat(ws)
+
+	for {
+		err := websocket.Message.Receive(ws, &raw)
 		if err != nil {
-			log.Printf("Connection error: %v", err)
-			time.Sleep(10 * time.Second)
-			continue
+			log.Printf("Disconnected: %v", err)
+			return
 		}
 
-		log.Println("Connected. Waiting for server command...")
+		json.Unmarshal([]byte(raw), &msg)
 
-		for {
-			var cmd string
-			err := websocket.Message.Receive(ws, &cmd)
-			if err != nil {
-				log.Printf("Disconnected or error: %v", err)
-				break
-			}
-
-			log.Printf("Received command: %s", cmd)
-
-			if cmd == "COLLECT_INFO" {
-				info := collectSystemInfo()
-				data, _ := json.Marshal(info)
-				websocket.Message.Send(ws, string(data))
-			}
+		if msg.Type == "COMMAND" {
+			handleCommand(ws, msg.Command)
 		}
-		ws.Close()
+	}
+}
+
+func heartbeat(ws *websocket.Conn) {
+	for {
+		msg := Message{
+			Type: "HEARTBEAT",
+		}
+
+		data, _ := json.Marshal(msg)
+		websocket.Message.Send(ws, string(data))
+
+		time.Sleep(30 * time.Second)
+	}
+}
+
+func handleCommand(ws *websocket.Conn, cmd string) {
+	switch cmd {
+	case "COLLECT_INFO":
+		info := collectSystemInfo()
+
+		payload := Message{
+			Type: "TELEMETRY",
+			Data: info,
+		}
+
+		data, _ := json.Marshal(payload)
+		websocket.Message.Send(ws, string(data))
 	}
 }
 
@@ -76,7 +152,7 @@ func collectSystemInfo() SystemInfo {
 	hostname, _ := os.Hostname()
 	usr, _ := user.Current()
 
-	return SystemInfo{
+	info := SystemInfo{
 		Hostname:      hostname,
 		OS:            runtime.GOOS,
 		Architecture:  runtime.GOARCH,
@@ -87,65 +163,86 @@ func collectSystemInfo() SystemInfo {
 		SystemSummary: getSystemSummary(),
 		InstalledApps: getInstalledSoftware(),
 	}
+
+	saveToFile(info)
+	return info
 }
 
 func getSystemSummary() string {
-	return runCommand("uname", "-a") + "\n" + runCommand("lsb_release", "-a")
+	summary := runCommand("uname", "-a")
+
+	lsb := runCommand("lsb_release", "-a")
+	if !strings.Contains(lsb, "Error") {
+		summary += "\n" + lsb
+	}
+
+	return summary
 }
 
 func getInstalledSoftware() []string {
 	output := runCommand("dpkg", "-l")
-	if strings.Contains(output, "command not found") || strings.TrimSpace(output) == "" {
+
+	if strings.Contains(output, "Error") || strings.TrimSpace(output) == "" {
 		output = runCommand("rpm", "-qa")
 	}
+
 	return strings.Split(output, "\n")
 }
 
 func getIPAddresses() []string {
 	var ips []string
+
 	ifaces, err := net.Interfaces()
 	if err != nil {
 		return ips
 	}
+
 	for _, iface := range ifaces {
 		addrs, _ := iface.Addrs()
+
 		for _, addr := range addrs {
 			ip := strings.Split(addr.String(), "/")[0]
-			if ip != "127.0.0.1" && !strings.HasPrefix(ip, "169.") {
+
+			if ip != "127.0.0.1" &&
+				!strings.HasPrefix(ip, "169.") &&
+				!strings.Contains(ip, ":") {
 				ips = append(ips, ip)
 			}
 		}
 	}
+
 	return ips
 }
 
 func getBootTime() string {
-	output := runCommand("uptime", "-s")
-	return strings.TrimSpace(output)
+	return strings.TrimSpace(runCommand("uptime", "-s"))
 }
 
 func getTotalMemory() string {
 	output := runCommand("grep", "MemTotal", "/proc/meminfo")
 	fields := strings.Fields(output)
+
 	if len(fields) >= 2 {
 		kb := 0
 		fmt.Sscanf(fields[1], "%d", &kb)
 		return fmt.Sprintf("%.2f GB", float64(kb)/1024/1024)
 	}
+
 	return ""
 }
 
 func runCommand(name string, args ...string) string {
 	cmd := exec.Command(name, args...)
 	out, err := cmd.CombinedOutput()
+
 	if err != nil {
 		return fmt.Sprintf("Error running %s: %v", name, err)
 	}
+
 	return string(out)
 }
 
 func saveToFile(info SystemInfo) {
 	data, _ := json.MarshalIndent(info, "", "  ")
 	os.WriteFile(configFile, data, 0644)
-	log.Printf("System info saved to %s", configFile)
 }

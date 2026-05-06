@@ -223,3 +223,33 @@ CREATE TABLE agents (
     static_token VARCHAR(128) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- 8. Telementry table
+CREATE TABLE telemetry (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    agent_id INT NOT NULL,
+    payload JSON NOT NULL,
+    received_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (agent_id) REFERENCES agents(id)
+);
+
+-- 9. Agents sessions table
+CREATE TABLE agent_sessions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    agent_id INT NOT NULL,
+    status ENUM('online','offline','idle','listening') DEFAULT 'offline',
+    connected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    session_id VARCHAR(255),
+    FOREIGN KEY (agent_id) REFERENCES agents(id)
+);
+
+-- 10. Commands table
+CREATE TABLE commands (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    agent_id INT NOT NULL,
+    command VARCHAR(100) NOT NULL,
+    status ENUM('queued','sent','completed','failed') DEFAULT 'queued',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (agent_id) REFERENCES agents(id)
+);
